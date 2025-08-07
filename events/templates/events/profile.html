@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Welcome, {{ user.username }} 👋</h1>
+
+<!-- User Info -->
+<div class="bg-white shadow rounded p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-2">Account Info</h2>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Joined:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
+</div>
+
+<!-- Booking History -->
+<div class="bg-white shadow rounded p-6">
+    <h2 class="text-lg font-semibold mb-4">Your Bookings</h2>
+
+    {% if bookings %}
+        <ul class="space-y-4">
+            {% for booking in bookings %}
+                <li class="border border-gray-200 rounded p-4">
+                    <div>
+                        <h3 class="text-md font-bold">{{ booking.ticket.event.title }}</h3>
+                        <p class="text-sm text-gray-600">Event Date: {{ booking.ticket.event.date }}</p>
+                        <p class="text-sm text-gray-600">Tickets: {{ booking.quantity }}</p>
+                        <p class="text-sm text-gray-600">Booked: {{ booking.booked_at|date:"F j, Y, H:i" }}</p>
+
+                        <div class="mt-2 space-x-4">
+                            {% if booking.ticket and booking.ticket.event %}
+                                <a href="{% url 'event-detail' booking.ticket.event.id %}" class="text-blue-600 hover:underline">View Event</a>
+                            {% endif %}
+                            
+                            {% if booking.ticket.id %}
+                                <a href="{% url 'ticket-detail' booking.ticket.id %}" class="text-green-600 hover:underline">View Ticket</a>
+                            {% endif %}
+                        </div>
+                            {% for booking in bookings %}
+                            <p>{{ booking.ticket.event.title }} - {{ booking.quantity }} tickets</p>
+                        {% if booking.receipt_file %}
+                        <a href="{{ booking.receipt_file.url }}" download>Download Receipt</a>
+                        {% endif %}
+                        {% endfor %}
+                        <!-- Cancel Booking Button -->
+                        <form action="{% url 'cancel-booking' booking.id %}" method="post" class="mt-2">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-500 hover:underline text-sm">Cancel Booking</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-600">You haven’t booked any events yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

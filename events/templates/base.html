@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>{% block title %}Event Manager{% endblock %}</title>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow mb-6">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="{% url 'event-list' %}" class="text-xl font-semibold text-blue-600">Events</a>
+            <div>
+                {% if user.is_authenticated %}
+                    {% if user.is_authenticated and user.is_organizer %}
+                        <a href="{% url 'organizer-dashboard' %}" class="text-sm text-blue-600 hover:underline">My Events</a>
+                    {% endif %}
+                    <a href="{% url 'profile' %}" class="mr-4 text-sm text-gray-700 hover:underline">Profile</a>
+                    <a href="{% url 'logout' %}" class="text-sm text-red-600 hover:underline">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="mr-4 text-sm text-blue-600 hover:underline">Login</a>
+                    <a href="{% url 'register' %}" class="text-sm text-blue-600 hover:underline">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-grow container mx-auto px-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-10 shadow py-4">
+        <div class="text-center text-sm text-gray-500">
+            &copy; {{ now|date:"Y" }} Event Platform. All rights reserved.
+        </div>
+    </footer>
+
+</body>
+</html>

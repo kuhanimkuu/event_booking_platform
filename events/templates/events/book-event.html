@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Book Tickets{% endblock %}
+
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Book Ticket for {{ event.title }}</h2>
+
+<form method="post" class="bg-white p-6 rounded shadow">
+    {% csrf_token %}
+
+    <p><strong>Ticket Type:</strong> {{ ticket.type }}</p>
+    <p><strong>Price:</strong> KES {{ ticket.price }}</p>
+
+    <label for="quantity" class="block mt-4 mb-1 font-medium">Quantity</label>
+    <input type="number" name="quantity" value="1" min="1" class="border px-2 py-1 rounded w-24">
+
+    <label for="method" class="block mt-4 mb-1 font-medium">Payment Method</label>
+    <select name="method" class="border px-2 py-1 rounded w-full">
+        <option value="mpesa">M-Pesa</option>
+        <option value="card">Card</option>
+        <option value="paypal">PayPal</option>
+    </select>
+
+    <button type="submit" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Confirm Booking
+    </button>
+</form>
+{% endblock %}

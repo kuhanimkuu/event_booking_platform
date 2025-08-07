@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Upcoming Events{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Upcoming Events</h1>
+
+<form method="get" class="mb-6">
+    <input type="text" name="q" placeholder="Search events..." value="{{ query|default_if_none:'' }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full sm:w-1/2 mb-2">
+    <button type="submit"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Search
+    </button>
+</form>
+
+<div class="grid gap-4 md:grid-cols-2">
+    {% for event in events %}
+        <div class="bg-white p-4 rounded shadow">
+            <h2 class="text-lg font-semibold">{{ event.title }}</h2>
+            <p class="text-sm text-gray-600 mb-2">{{ event.date }} @ {{ event.venue.name }}</p>
+            <p class="text-gray-700">{{ event.description|truncatewords:20 }}</p>
+            <a href="{% url 'event-detail' event.id %}"
+               class="inline-block mt-3 text-blue-600 hover:underline">View Details</a>
+        </div>
+    {% empty %}
+        <p>No events found.</p>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div class="mt-6 flex justify-center">
+    {% if events.has_previous %}
+        <a href="?q={{ query }}&page={{ events.previous_page_number }}"
+           class="mr-4 text-blue-600 hover:underline">Previous</a>
+    {% endif %}
+    <span class="mx-2 text-gray-600">Page {{ events.number }} of {{ events.paginator.num_pages }}</span>
+    {% if events.has_next %}
+        <a href="?q={{ query }}&page={{ events.next_page_number }}"
+           class="ml-4 text-blue-600 hover:underline">Next</a>
+    {% endif %}
+</div>
+{% endblock %}
