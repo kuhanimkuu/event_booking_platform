@@ -1,68 +1,49 @@
 {% extends 'base.html' %}
-{% block title %}Upcoming Events{% endblock %}
-
+{% block title %}All Events{% endblock %}
 {% block content %}
-<section class="py-12 bg-gray-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="text-3xl font-extrabold text-pink-600 mb-6">Upcoming Events</h1>
 
-    <!-- Search Form -->
-    <form method="get" class="mb-8 flex flex-col sm:flex-row gap-3">
-      <input type="text" name="q" placeholder="Search events..."
-        value="{{ query|default_if_none:'' }}"
-        class="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
-      <button type="submit"
-        class="bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition">
-        Search
-      </button>
+<section class="py-12">
+  <div class="max-w-6xl mx-auto px-4">
+    <form method="get" class="mb-8 flex gap-2">
+      <input type="text" name="q" value="{{ search }}" placeholder="Search events..." class="flex-1 border rounded px-3 py-2 shadow-sm" />
+      <button type="submit" class="bg-pink-600 text-white px-4 py-2 rounded">Search</button>
     </form>
 
-    <!-- Event Cards -->
-    <div class="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      {% for event in events %}
-      <div class="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden">
-        {% if event.image %}
-        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-56 object-cover">
-        {% else %}
-        <div class="w-full h-56 bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-          No Image Available
-        </div>
-        {% endif %}
-        <div class="p-5">
-          <h2 class="text-xl font-bold text-gray-800">{{ event.title }}</h2>
-          <p class="text-sm text-gray-600 mt-1">
-            {{ event.date|date:"F j, Y @ g:i A" }} &middot; {{ event.venue.name }}
-          </p>
-          <p class="text-gray-700 mt-3 text-sm">
-            {{ event.description|truncatewords:25 }}
-          </p>
-          <a href="{% url 'event-detail' event.id %}"
-            class="mt-4 inline-block text-pink-600 font-medium hover:underline text-sm">
-            View Details →
-          </a>
-        </div>
+    {% if event_data %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in event_data %}
+          {% with event=item.event %}
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ event.title }}</h2>
+
+            {% if item.status == "Ended" %}
+              <p class="text-red-600 font-semibold mb-2">This event has ended.</p>
+              <ul class="text-sm text-gray-700 space-y-1">
+                <li><strong>Start:</strong> {{ event.start_time|date:"F j, Y @ g:i A" }}</li>
+                <li><strong>End:</strong> {{ event.end_time|date:"F j, Y @ g:i A" }}</li>
+                <li><strong>Venue:</strong> {{ event.venue.name }}</li>
+                <li><strong>Tickets Sold:</strong> {{ item.total_booked }}</li>
+                <li><strong>Remaining:</strong> {{ item.remaining }}</li>
+              </ul>
+            {% else %}
+              <p class="text-sm text-gray-600 mb-2">
+                <strong>Date:</strong> {{ event.date|date:"F j, Y @ g:i A" }}<br>
+                <strong>Venue:</strong> {{ event.venue.name }}
+              </p>
+              <a href="{% url 'event-detail' event.pk %}" class="mt-2 inline-block bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition">
+                View Details
+              </a>
+            {% endif %}
+          </div>
+          {% endwith %}
+        {% endfor %}
       </div>
-      {% empty %}
-      <p class="text-gray-600">No upcoming events found.</p>
-      {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if events.has_other_pages %}
-    <div class="mt-10 flex justify-center items-center space-x-6">
-      {% if events.has_previous %}
-      <a href="?q={{ query }}&page={{ events.previous_page_number }}"
-        class="text-pink-600 hover:underline">← Previous</a>
-      {% endif %}
-
-      <span class="text-gray-600">Page {{ events.number }} of {{ events.paginator.num_pages }}</span>
-
-      {% if events.has_next %}
-      <a href="?q={{ query }}&page={{ events.next_page_number }}"
-        class="text-pink-600 hover:underline">Next →</a>
-      {% endif %}
-    </div>
+    {% else %}
+      <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">
+        <p>No events found for "{{ search }}".</p>
+      </div>
     {% endif %}
   </div>
 </section>
+
 {% endblock %}

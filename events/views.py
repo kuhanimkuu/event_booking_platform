@@ -7,6 +7,9 @@ from reportlab.pdfgen import canvas
 from .utils import generate_receipt_pdf
 from django.http import FileResponse, Http404
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.db.models import Q
+
 # Django & Core Imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
@@ -156,14 +159,57 @@ def homepage_view(request):
     return render(request, 'events/home.html', {'events': events})
 
 
+
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum
+from .models import Event, Ticket, Booking
+
+
 def event_list_view(request):
+    search = request.GET.get('q', '')
     events = Event.objects.all()
-    return render(request, 'events/event_list.html', {'events': events})
+
+    if search:
+        events = events.filter(
+            Q(title__icontains=search) |
+            Q(description__icontains=search) |
+            Q(venue__name__icontains=search)
+        )
+
+    # ✅ Fix: Use a valid field for ordering
+    paginator = Paginator(events.order_by('-start_time'), 6)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Add ticket/booking info per event
+    event_data = []
+    for event in page_obj:
+        ticket = Ticket.objects.filter(event=event).first()
+        total_booked = Booking.objects.filter(ticket=ticket).aggregate(total=Sum('quantity'))['total'] or 0
+        remaining = (ticket.quantity - total_booked) if ticket else 0
+        event_data.append({
+            'event': event,
+            'status': event.get_status(),
+            'ticket': ticket,
+            'total_booked': total_booked,
+            'remaining': remaining
+        })
+
+    return render(request, 'events/event_list.html', {
+        'search': search,
+        'page_obj': page_obj,
+        'event_data': event_data
+    })
+
 
 
 def event_detail_view(request, pk):
     event = get_object_or_404(Event, pk=pk)
+    search = request.GET.get('search', '')
+
     ticket = Ticket.objects.filter(event=event).first()
+    status = event.get_status()
+    allow_purchase = status == "Not started"
 
     if ticket:
         total_booked = Booking.objects.filter(ticket=ticket).aggregate(total=Sum('quantity'))['total'] or 0
@@ -171,10 +217,21 @@ def event_detail_view(request, pk):
     else:
         remaining = 0
 
+    # Related Events
+    other_events = Event.objects.exclude(pk=pk)
+    if search:
+        other_events = other_events.filter(
+            Q(title__icontains=search) | Q(description__icontains=search)
+        )
+
     return render(request, 'events/event_detail.html', {
         'event': event,
+        'status': status,
         'ticket': ticket,
-        'remaining': remaining
+        'remaining': remaining,
+        'allow_purchase': allow_purchase,
+        'other_events': other_events,
+        'search': search,
     })
 
 def login_view(request):
