@@ -46,6 +46,16 @@ class Event(models.Model):
     image = CloudinaryField('image', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def status(self):
+        now = timezone.now()
+        if now < self.start_time:
+            return "Not started"
+        elif self.start_time <= now <= self.end_time:
+            return "Ongoing"
+        else:
+            return "Ended"
+
     def __str__(self):
         return self.title
     

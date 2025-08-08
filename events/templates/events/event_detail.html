@@ -23,22 +23,40 @@
         {{ event.description }}
     </p>
 
+    <!-- Status Display -->
+    <p class="mt-4">
+        <span class="font-semibold text-gray-700">Event Status:</span>
+        {% if event.status == 'Not started' %}
+            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">🕒 Not Started</span>
+        {% elif event.status == 'Ongoing' %}
+            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">🔴 Ongoing</span>
+        {% else %}
+            <span class="bg-gray-300 text-gray-700 px-3 py-1 rounded-full">✅ Ended</span>
+        {% endif %}
+    </p>
+
     <!-- Ticket Info -->
     <div class="mt-6">
         {% if ticket %}
             <p class="text-red-600 font-semibold mb-4">
                 Tickets Remaining: {{ remaining }}
             </p>
-            {% if user.is_authenticated %}
-                <a href="{% url 'book-event' event.id %}"
-                   class="inline-block bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition">
-                    Book Now
-                </a>
+
+            {% if event.status == 'Not started' %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'book-event' event.id %}"
+                       class="inline-block bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition">
+                        Book Now
+                    </a>
+                {% else %}
+                    <p class="text-blue-600 mt-2">
+                        <a href="{% url 'login' %}" class="underline font-medium">Log in</a> to book tickets.
+                    </p>
+                {% endif %}
             {% else %}
-                <p class="text-blue-600 mt-2">
-                    <a href="{% url 'login' %}" class="underline font-medium">Log in</a> to book tickets.
-                </p>
+                <p class="text-red-600 font-semibold">🎫 Ticket sales are closed — this event is {{ event.status|lower }}.</p>
             {% endif %}
+
         {% else %}
             <p class="text-red-600 font-semibold">No tickets available for this event.</p>
         {% endif %}

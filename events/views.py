@@ -6,6 +6,7 @@ from django.conf import settings
 from reportlab.pdfgen import canvas
 from .utils import generate_receipt_pdf
 from django.http import FileResponse, Http404
+from django.utils import timezone
 # Django & Core Imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
@@ -318,7 +319,9 @@ def view_event_bookings(request, event_id):
 def book_event_view(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     ticket = Ticket.objects.filter(event=event).first()
-
+    if timezone.now() >= event.start_time:
+        messages.error(request, "You cannot book tickets for events that have started or ended.")
+        return redirect('event-detail', event_id=event.id)
     if not ticket:
         messages.error(request, "No tickets available for this event.")
         return redirect('event-detail', pk=event.id)
