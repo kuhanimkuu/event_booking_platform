@@ -2,26 +2,46 @@
 {% block title %}{{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-2">{{ event.title }}</h1>
-    <p class="text-gray-600 mb-2"><strong>Date:</strong> {{ event.date }}</p>
-    <p class="text-gray-600 mb-2"><strong>Location:</strong> {{ event.venue.name }}, {{ event.venue.location }}</p>
-    <p class="mb-4 text-gray-700">{{ event.description }}</p>
-
-    {% if ticket %}
-        <p class="text-red-600 mb-4 font-semibold">
-            Tickets Remaining: {{ remaining }}
-        </p>
-            {% if user.is_authenticated %}
-             <a href="{% url 'book-event' event.id %}" 
-                class="inline-block mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                 Book Now
-                </a>
-                {% else %}
-            <p class="text-blue-600"><a href="{% url 'login' %}" class="underline">Log in</a> to book tickets.</p>
-        {% endif %}
-    {% else %}
-        <p class="text-red-600 font-semibold">No tickets available for this event.</p>
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow p-6 mt-10">
+    <!-- Event Image -->
+    {% if event.image %}
+        <img src="{{ event.image.url }}" alt="{{ event.title }}" 
+             class="w-full h-64 object-cover rounded-xl mb-6 shadow-sm">
     {% endif %}
+
+    <!-- Event Details -->
+    <h1 class="text-3xl font-bold text-pink-600 mb-4">{{ event.title }}</h1>
+
+    <p class="text-gray-600 mb-2">
+        <strong>Date:</strong> {{ event.date|date:"F j, Y @ g:i A" }}
+    </p>
+    <p class="text-gray-600 mb-2">
+        <strong>Location:</strong> {{ event.venue.name }}, {{ event.venue.location }}
+    </p>
+
+    <p class="text-gray-700 mt-4 leading-relaxed">
+        {{ event.description }}
+    </p>
+
+    <!-- Ticket Info -->
+    <div class="mt-6">
+        {% if ticket %}
+            <p class="text-red-600 font-semibold mb-4">
+                Tickets Remaining: {{ remaining }}
+            </p>
+            {% if user.is_authenticated %}
+                <a href="{% url 'book-event' event.id %}"
+                   class="inline-block bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition">
+                    Book Now
+                </a>
+            {% else %}
+                <p class="text-blue-600 mt-2">
+                    <a href="{% url 'login' %}" class="underline font-medium">Log in</a> to book tickets.
+                </p>
+            {% endif %}
+        {% else %}
+            <p class="text-red-600 font-semibold">No tickets available for this event.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

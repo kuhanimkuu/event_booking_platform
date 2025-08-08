@@ -1,25 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-5xl mx-auto mt-10">
-    <h2 class="text-2xl font-semibold mb-6">My Events</h2>
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">🎉 My Events</h2>
+        <a href="{% url 'create-event' %}" 
+           class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg shadow hover:from-indigo-700 hover:to-purple-700 transition duration-200">
+            + Create New Event
+        </a>
+    </div>
 
-    <a href="{% url 'create-event' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        + Create New Event
-    </a>
-
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% if events %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for event in events %}
-        <div class="bg-white p-5 rounded shadow">
-            <h3 class="text-xl font-semibold">{{ event.title }}</h3>
-            <p class="text-gray-600">{{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"M d, Y H:i" }}</p>
-            <div class="mt-4 flex gap-2">
-                <a href="{% url 'edit-event' event.pk %}" class="text-blue-600 hover:underline">Edit</a>
-                <a href="{% url 'delete-event' event.pk %}" class="text-red-600 hover:underline">Delete</a>
+        <div class="bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition duration-200">
+            <div class="p-5">
+                <h3 class="text-xl font-semibold text-gray-800">{{ event.title }}</h3>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ event.start_time|date:"M d, Y H:i" }} – {{ event.end_time|date:"M d, Y H:i" }}
+                </p>
+
+                <div class="mt-4 flex items-center justify-between">
+                    <a href="{% url 'edit-event' event.pk %}"
+                       class="inline-block text-sm text-indigo-600 hover:underline font-medium">
+                        ✏️ Edit
+                    </a>
+                    <a href="{% url 'delete-event' event.pk %}"
+                       class="inline-block text-sm text-red-600 hover:underline font-medium">
+                        🗑️ Delete
+                    </a>
+                </div>
             </div>
         </div>
-        {% empty %}
-        <p class="text-gray-500">You haven't created any events yet.</p>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="text-center text-gray-500 mt-20">
+        <p class="text-lg">You haven't created any events yet.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

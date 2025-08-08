@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'cloudinary',
     'rest_framework',
     'events',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'widget_tweaks'
    
 ]
 

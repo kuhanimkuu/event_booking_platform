@@ -1,12 +1,36 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="max-w-3xl mx-auto mt-10">
-    <h2 class="text-2xl font-semibold mb-6">Edit Event: {{ event.title }}</h2>
 
-    <form method="post" enctype="multipart/form-data" class="space-y-4">
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow-md rounded-xl p-8 font-sans">
+    <h2 class="text-3xl font-bold text-pink-600 mb-6">Edit Event: {{ event.title }}</h2>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+
+        <div class="space-y-4">
+            {{ form.title.label_tag }} {{ form.title }}
+            {{ form.description.label_tag }} {{ form.description }}
+            {{ form.category.label_tag }} {{ form.category }}
+            {{ form.venue.label_tag }} {{ form.venue }}
+            {{ form.start_time.label_tag }} {{ form.start_time }}
+            {{ form.end_time.label_tag }} {{ form.end_time }}
+
+            <!-- Image input field -->
+            <div>
+                {{ form.image.label_tag }}
+                {{ form.image }}
+            </div>
+
+            <!-- Display image preview after the image field -->
+            {% if event.image %}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mt-2 mb-1">Current Image Preview</label>
+                    <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full max-h-64 object-cover rounded-lg border border-gray-300 shadow-sm">
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="bg-pink-600 text-white px-6 py-3 rounded-xl hover:bg-pink-700 font-semibold shadow transition duration-200">
             Update Event
         </button>
     </form>

@@ -2,55 +2,64 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Welcome, {{ user.username }} 👋</h1>
+<section class="py-10 bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-extrabold text-pink-600 mb-8 text-center">Welcome, {{ user.username }} 👋</h1>
 
-<!-- User Info -->
-<div class="bg-white shadow rounded p-6 mb-6">
-    <h2 class="text-lg font-semibold mb-2">Account Info</h2>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Joined:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
-</div>
+    <!-- Account Info -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Account Information</h2>
+      <div class="space-y-2 text-gray-700">
+        <p><span class="font-medium">Email:</span> {{ user.email }}</p>
+        <p><span class="font-medium">Joined:</span> {{ user.date_joined|date:"F j, Y" }}</p>
+      </div>
+    </div>
 
-<!-- Booking History -->
-<div class="bg-white shadow rounded p-6">
-    <h2 class="text-lg font-semibold mb-4">Your Bookings</h2>
+    <!-- Booking History -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Bookings</h2>
 
-    {% if bookings %}
-        <ul class="space-y-4">
-            {% for booking in bookings %}
-                <li class="border border-gray-200 rounded p-4">
-                    <div>
-                        <h3 class="text-md font-bold">{{ booking.ticket.event.title }}</h3>
-                        <p class="text-sm text-gray-600">Event Date: {{ booking.ticket.event.date }}</p>
-                        <p class="text-sm text-gray-600">Tickets: {{ booking.quantity }}</p>
-                        <p class="text-sm text-gray-600">Booked: {{ booking.booked_at|date:"F j, Y, H:i" }}</p>
+      {% if bookings %}
+        <ul class="space-y-6">
+          {% for booking in bookings %}
+            <li class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <!-- Booking Details -->
+              <div class="mb-4">
+                <h3 class="text-lg font-bold text-gray-800">{{ booking.ticket.event.title }}</h3>
+                <p class="text-sm text-gray-600">📅 Event Date: {{ booking.ticket.event.date }}</p>
+                <p class="text-sm text-gray-600">🎟️ Tickets: {{ booking.quantity }}</p>
+                <p class="text-sm text-gray-600">🕓 Booked On: {{ booking.booked_at|date:"F j, Y, g:i A" }}</p>
+              </div>
 
-                        <div class="mt-2 space-x-4">
-                            {% if booking.ticket and booking.ticket.event %}
-                                <a href="{% url 'event-detail' booking.ticket.event.id %}" class="text-blue-600 hover:underline">View Event</a>
-                            {% endif %}
-                            
-                            {% if booking.ticket.id %}
-                                <a href="{% url 'ticket-detail' booking.ticket.id %}" class="text-green-600 hover:underline">View Ticket</a>
-                            {% endif %}
-                        </div>
-                            {% for booking in bookings %}
-                            <p>{{ booking.ticket.event.title }} - {{ booking.quantity }} tickets</p>
-                        {% if booking.receipt_file %}
-                        <a href="{{ booking.receipt_file.url }}" download>Download Receipt</a>
-                        {% endif %}
-                        {% endfor %}
-                        <!-- Cancel Booking Button -->
-                        <form action="{% url 'cancel-booking' booking.id %}" method="post" class="mt-2">
-                            {% csrf_token %}
-                            <button type="submit" class="text-red-500 hover:underline text-sm">Cancel Booking</button>
-                        </form>
-                    </div>
-                </li>
-            {% endfor %}
+              <!-- Action Links -->
+              <div class="flex flex-wrap items-center justify-between border-t pt-3 mt-3 gap-4 text-sm">
+                <div class="space-x-4">
+                  {% if booking.ticket.event %}
+                    <a href="{% url 'event-detail' booking.ticket.event.id %}" class="text-blue-600 hover:underline font-medium">View Event</a>
+                  {% endif %}
+                  {% if booking.ticket.id %}
+                    <a href="{% url 'ticket-detail' booking.ticket.id %}" class="text-green-600 hover:underline font-medium">View Ticket</a>
+                  {% endif %}
+                  {% if booking.receipt_file %}
+                    <a href="{% url 'download-receipt' booking.id %}" class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">
+                        📥 Download PDF Receipt
+                    </a>
+                  {% endif %}
+                </div>
+
+                <!-- Cancel Booking Button -->
+                <form action="{% url 'cancel-booking' booking.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="text-red-500 hover:underline font-medium">Cancel Booking</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
         </ul>
-    {% else %}
-        <p class="text-gray-600">You haven’t booked any events yet.</p>
-    {% endif %}
-</div>
+      {% else %}
+        <p class="text-gray-600 text-center">You haven’t booked any events yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
 {% endblock %}

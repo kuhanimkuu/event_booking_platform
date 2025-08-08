@@ -5,6 +5,7 @@ from django.core.files import File
 from django.conf import settings
 from reportlab.pdfgen import canvas
 from .utils import generate_receipt_pdf
+from django.http import FileResponse, Http404
 # Django & Core Imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
@@ -310,14 +311,8 @@ def view_event_bookings(request, event_id):
     return render(request, 'events/event_bookings.html', {'bookings': bookings, 'event': event})
 
 
-from .models import Event, Ticket, Booking, Payment
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
-from decimal import Decimal
-import uuid
 
-from django.urls import reverse
+
 
 @login_required
 def book_event_view(request, event_id):
@@ -409,3 +404,18 @@ def receipt_view(request, booking_id):
         'booking': booking,
         'payment': payment,
     })
+
+
+
+@login_required
+def download_receipt_view(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+
+    if not booking.receipt_file:
+        raise Http404("Receipt not found")
+
+    receipt_path = booking.receipt_file.path
+    if not os.path.exists(receipt_path):
+        raise Http404("File does not exist")
+
+    return FileResponse(open(receipt_path, 'rb'), as_attachment=True, filename=os.path.basename(receipt_path))

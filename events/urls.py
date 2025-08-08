@@ -24,7 +24,8 @@ api_urlpatterns = [
 # Template-based (HTML) routes
 template_urlpatterns = [
     # Public
-    path('', template_views.event_list_view, name='event-list'),
+    path('',template_views.homepage_view, name='Home'), 
+    path('events/events', template_views.event_list_view, name='event-list'),
     path('events/<int:pk>/', template_views.event_detail_view, name='event-detail'),
 
     # Auth
@@ -39,6 +40,7 @@ template_urlpatterns = [
     path('events/<int:event_id>/', template_views.event_detail_view, name='event-detail'),
     path('receipt/<int:booking_id>/', template_views.receipt_view, name='receipt'),
     path('tickets/<int:pk>/', template_views.ticket_detail_view, name='ticket-detail'),
+    path('receipt/<int:booking_id>/download/', template_views.download_receipt_view, name='download-receipt'),
     # Organizer Dashboard
     path('organizer/dashboard/', template_views.organizer_dashboard_view, name='organizer-dashboard'),
 

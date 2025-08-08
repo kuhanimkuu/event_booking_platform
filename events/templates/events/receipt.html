@@ -1,26 +1,32 @@
-{% extends 'base.html' %}
-{% block title %}Booking Receipt{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
-<div class="bg-white p-6 shadow rounded w-full max-w-xl mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Booking Receipt</h2>
+<div class="max-w-2xl mx-auto mt-12 bg-white shadow-md rounded-xl p-8 font-sans">
+    <h2 class="text-2xl font-bold text-pink-600 mb-6">Receipt for Booking #{{ booking.id }}</h2>
 
-    <p><strong>Event:</strong> {{ booking.ticket.event.title }}</p>
-    <p><strong>Venue:</strong> {{ booking.ticket.event.venue.name }}</p>
-    <p><strong>Start Time:</strong> {{ booking.ticket.event.start_time|date:"F j, Y, H:i" }}</p>
-    <p><strong>End Time:</strong> {{ booking.ticket.event.end_time|date:"F j, Y, H:i" }}</p>
-    <p><strong>Ticket:</strong> {{ booking.ticket.name }} ({{ booking.ticket.get_type_display }})</p>
-    <p><strong>Booked By:</strong> {{ booking.user.get_full_name|default:booking.user.username }}</p>
-    <p><strong>Quantity:</strong> {{ booking.quantity }}</p>
-    <p><strong>Payment Method:</strong> {{ payment.method }}</p>
-    <p><strong>Amount Paid:</strong> KES {{ payment.amount }}</p>
-    <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
-    <p><strong>Status:</strong> 
-        {% if payment.status == "successful" %}
-            <span class="text-green-600 font-semibold">Successful</span>
-        {% else %}
-            <span class="text-red-600 font-semibold">{{ payment.status|title }}</span>
-        {% endif %}
-    </p>
+    <div class="space-y-4 text-left text-gray-700">
+        <p><strong>Event:</strong> {{ booking.ticket.event.title }}</p>
+        <p><strong>User:</strong> {{ booking.user.username }}</p>
+        <p><strong>Quantity:</strong> {{ booking.quantity }}</p>
+        <p><strong>Total Paid:</strong> KES {{ payment.amount }}</p>
+        <p><strong>Payment Method:</strong> {{ payment.method|title }}</p>
+        <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
+        <p><strong>Status:</strong> 
+            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold 
+            {% if payment.status == 'successful' %}
+                bg-green-100 text-green-700
+            {% else %}
+                bg-red-100 text-red-700
+            {% endif %}
+            ">
+                {{ payment.status|title }}
+            </span>
+        </p>
+    </div>
+
+    <div class="mt-8">
+        <a href="{% url 'download-receipt' booking.id %}" class="inline-block bg-pink-600 text-white px-5 py-2 rounded hover:bg-pink-700 transition">
+            📥 Download PDF Receipt
+        </a>
+    </div>
 </div>
 {% endblock %}

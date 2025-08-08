@@ -2,31 +2,52 @@
 {% block title %}Ticket Details{% endblock %}
 
 {% block content %}
-<div class="bg-white p-6 shadow rounded">
-    <h1 class="text-2xl font-bold mb-4">Ticket for {{ ticket.event.title }}</h1>
+<section class="py-10 bg-gray-50">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h1 class="text-3xl font-extrabold text-pink-600 mb-6 text-center">
+        🎫 Ticket for {{ ticket.event.title }}
+      </h1>
 
-    <p><strong>Name:</strong> {{ ticket.name }}</p>
-    <p><strong>Price:</strong> KES {{ ticket.price }}</p>
+      <!-- Ticket Info -->
+      <div class="space-y-3 text-gray-700 text-base text-center" >
+        <p><span class="font-semibold">🎟️ Ticket Type:</span> {{ ticket.type }}</p>
+        <p><span class="font-semibold">💰 Price:</span> KES {{ ticket.price }}</p>
+        <p><span class="font-semibold">📍 Location:</span> {{ ticket.event.venue.name }}</p>
+        <p><span class="font-semibold">🕒 Start:</span> {{ ticket.event.start_time|date:"F j, Y, g:i A" }}</p>
+        <p><span class="font-semibold">🕓 End:</span> {{ ticket.event.end_time|date:"F j, Y, g:i A" }}</p>
+      </div>
 
-    <p><strong>Location:</strong> {{ ticket.event.venue.name }}</p>
-
-    <p><strong>Start:</strong> {{ ticket.event.start_time|date:"F j, Y, H:i" }}</p>
-    <p><strong>End:</strong> {{ ticket.event.end_time|date:"F j, Y, H:i" }}</p>
-
-    {% if booking %}
-        <p><strong>Booked By:</strong> {{ booking.user.get_full_name|default:booking.user.username }}</p>
-        <p><strong>Quantity Booked:</strong> {{ booking.quantity }}</p>
-        <p><strong>Payment Status:</strong> {{ booking.payment_status }}</p>
-    {% else %}
-        <p class="italic text-gray-500">You have not booked this ticket.</p>
-    {% endif %}
-
-    <div class="mt-4">
-        {% if ticket.is_sold_out %}
-            <span class="text-red-500 font-semibold">Sold Out</span>
+      <!-- Booking Info -->
+      <div class="mt-6">
+        {% if booking %}
+          <h2 class="text-center text-xl font-semibold text-gray-800 mb-4 border-t pt-4">📦 Booking Details</h2>
+          <ul class="space-y-2 text-gray-700 text-center">
+            <li><span class="font-medium">Booked By:</span> {{ booking.user.get_full_name|default:booking.user.username }}</li>
+            <li><span class="font-medium">Quantity Booked:</span> {{ booking.quantity }}</li>
+            <li><span class="font-medium">Payment Status:</span> {{ booking.payment_status }}</li>
+            <li><span class="font-medium">Total Paid:</span> <span class="text-green-600 font-semibold">KES {{ payment.amount }}</span></li>
+          </ul>
         {% else %}
-            <span class="text-green-600 font-semibold">Available</span>
+          <p class="italic text-gray-500 mt-4">You have not booked this ticket.</p>
         {% endif %}
+      </div>
+
+      <!-- Availability -->
+      <div class="mt-6 flex justify-between items-center px-4 py-2">
+        {% if ticket.is_sold_out %}
+          <span class="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full font-semibold">❌ Sold Out</span>
+        {% else %}
+          <span class="inline-block bg-green-100 text-green-600 px-3 py-1 rounded-full font-semibold">✅ Available</span>
+        {% endif %}
+         <a href="{% url 'profile' %}" class="inline-block bg-green-100 text-green-600 px-3 py-1 rounded-full font-semibold ">
+        Profile
+    </a>
+      </div>
+      
     </div>
-</div>
+    
+  </div>
+  
+</section>
 {% endblock %}
