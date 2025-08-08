@@ -89,9 +89,6 @@ class TicketForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
             }),
-            'type': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
-            }),
             'price': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
             }),
@@ -100,10 +97,65 @@ class TicketForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # ✅ Replace the widget with a Select and reassign choices
+        self.fields['type'].widget = forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
+        })
+        self.fields['type'].choices = Ticket.TICKET_TYPES
+
 class BookingForm(forms.Form):
+    ticket_type = forms.ChoiceField(label="Ticket Type", required=True)
+    quantity = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Enter quantity',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
+        })
+    )
+
     PAYMENT_METHOD_CHOICES = [
         ('mpesa', 'M-Pesa'),
         ('stripe', 'Stripe'),
         ('paypal', 'PayPal'),
     ]
-    payment_method = forms.ChoiceField(choices=PAYMENT_METHOD_CHOICES, label="Payment Method")
+    payment_method = forms.ChoiceField(
+        choices=PAYMENT_METHOD_CHOICES,
+        label="Payment Method",
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
+        })
+    )
+
+    def __init__(self, *args, event=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if event:
+            # Populate ticket types related to the given event
+            ticket_choices = [
+                (ticket.id, f"{ticket.name} - KES {ticket.price} (Available: {ticket.remaining_quantity})")
+                for ticket in Ticket.objects.filter(event=event)
+            ]
+            self.fields['ticket_type'].choices = ticket_choices
+            self.fields['ticket_type'].widget.attrs.update({
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500'
+            })
+            self.event = event  # Store for validation
+
+    def clean(self):
+        cleaned_data = super().clean()
+        ticket_id = cleaned_data.get('ticket_type')
+        quantity = cleaned_data.get('quantity')
+
+        if ticket_id and quantity:
+            try:
+                ticket = Ticket.objects.get(id=ticket_id, event=self.event)
+            except Ticket.DoesNotExist:
+                raise forms.ValidationError("Selected ticket does not exist.")
+
+            if quantity > ticket.remaining_quantity:
+                raise forms.ValidationError(
+                    f"Only {ticket.remaining_quantity} tickets available for {ticket.name}."
+                )
+        return cleaned_data

@@ -1,25 +1,34 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="max-w-3xl mx-auto mt-10 bg-white p-8 rounded shadow">
-    <h2 class="text-2xl font-semibold mb-6">Create Ticket for: <span class="text-pink-600">{{ event.title }}</span></h2>
+{% load widget_tweaks %}
 
-    <form method="post" class="space-y-6">
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 bg-white p-8 rounded shadow">
+    <h2 class="text-2xl font-semibold mb-6">Create Tickets for: <span class="text-pink-600">{{ event.title }}</span></h2>
+
+    <form method="post" class="space-y-8">
         {% csrf_token %}
-        
-        {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                    {{ field.label }}
-                </label>
-                {{ field }}
-                {% if field.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ field.errors|striptags }}</p>
-                {% endif %}
+
+        {% for ticket_type, form in forms.items %}
+            <div class="border-t pt-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                    {{ ticket_type|title }} Ticket
+                </h3>
+                {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ field.label }}
+                        </label>
+                        {{ field|add_class:"w-full px-3 py-2 border border-gray-300 rounded" }}
+                        {% if field.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
         {% endfor %}
 
         <button type="submit" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200">
-            Create Ticket
+            Create All Tickets
         </button>
     </form>
 </div>

@@ -9,7 +9,8 @@ from django.http import FileResponse, Http404
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
-
+from django.db.models import Sum, F, Value as V
+from django.db.models.functions import Coalesce
 # Django & Core Imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
@@ -167,8 +168,13 @@ from .models import Event, Ticket, Booking
 
 def event_list_view(request):
     search = request.GET.get('q', '')
+    filter_type = request.GET.get('status')  # No default to allow "All"
+    now = timezone.now()
+
+    # Base queryset
     events = Event.objects.all()
 
+    # 🔍 Filter by search query
     if search:
         events = events.filter(
             Q(title__icontains=search) |
@@ -176,12 +182,21 @@ def event_list_view(request):
             Q(venue__name__icontains=search)
         )
 
-    # ✅ Fix: Use a valid field for ordering
+    # 🔁 Filter by event status only if filter_type is set
+    if filter_type == 'upcoming':
+        events = events.filter(start_time__gt=now)
+    elif filter_type == 'ongoing':
+        events = events.filter(start_time__lte=now, end_time__gte=now)
+    elif filter_type == 'ended':
+        events = events.filter(end_time__lt=now)
+    # else: no filtering = show all events
+
+    # ⏳ Pagination
     paginator = Paginator(events.order_by('-start_time'), 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Add ticket/booking info per event
+    # 🎟️ Add ticket/booking info per event
     event_data = []
     for event in page_obj:
         ticket = Ticket.objects.filter(event=event).first()
@@ -197,10 +212,10 @@ def event_list_view(request):
 
     return render(request, 'events/event_list.html', {
         'search': search,
+        'filter_type': filter_type,
         'page_obj': page_obj,
         'event_data': event_data
     })
-
 
 
 def event_detail_view(request, pk):
@@ -344,23 +359,40 @@ def delete_event_view(request, pk):
     return render(request, 'events/delete_event.html', {'event': event})
 
 
-
 @login_required
 def create_ticket_view(request, event_id):
     if not request.user.is_organizer:
         return redirect('event-list')
+
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    ticket_types = ['regular', 'vip', 'student']
+    forms = {}
+
     if request.method == 'POST':
-        form = TicketForm(request.POST)
-        if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.event = event
-            ticket.save()
+        all_valid = True
+        for t_type in ticket_types:
+            form = TicketForm(request.POST, prefix=t_type)
+            forms[t_type] = form
+            if form.is_valid():
+                ticket = form.save(commit=False)
+                ticket.event = event
+                ticket.ticket_type = t_type  # Force the ticket type
+                ticket.save()
+            else:
+                all_valid = False
+
+        if all_valid:
             return redirect('organizer-dashboard')
     else:
-        form = TicketForm()
-        pass
-    return render(request, 'events/create_ticket.html', {'form': form, 'event': event})
+        for t_type in ticket_types:
+            forms[t_type] = TicketForm(prefix=t_type)
+
+    return render(request, 'events/create_ticket.html', {
+        'forms': forms,
+        'event': event
+    })
+
 
 @login_required
 def view_event_bookings(request, event_id):
@@ -372,14 +404,17 @@ def view_event_bookings(request, event_id):
 
 
 
+
 @login_required
 def book_event_view(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    ticket = Ticket.objects.filter(event=event).first()
+    tickets = Ticket.objects.filter(event=event)
+
     if timezone.now() >= event.start_time:
         messages.error(request, "You cannot book tickets for events that have started or ended.")
-        return redirect('event-detail', event_id=event.id)
-    if not ticket:
+        return redirect('event-detail', pk=event.id)
+
+    if not tickets.exists():
         messages.error(request, "No tickets available for this event.")
         return redirect('event-detail', pk=event.id)
 
@@ -388,10 +423,27 @@ def book_event_view(request, event_id):
             messages.warning(request, "You have already booked this event.")
             return redirect('event-detail', pk=event.id)
 
+        try:
+                selected_ticket_id = int(request.POST.get('ticket_type'))
+        except (TypeError, ValueError):
+                messages.error(request, "Invalid ticket selection.")
+                return redirect('book-event', event_id=event.id)
+
         quantity = int(request.POST.get('quantity', 1))
         method = request.POST.get('method', 'mpesa')
+
+        ticket = get_object_or_404(Ticket, id=selected_ticket_id, event=event)
+
+        total_booked = Booking.objects.filter(ticket=ticket).aggregate(total=Sum('quantity'))['total'] or 0
+        remaining = ticket.quantity - total_booked
+
+        if quantity > remaining:
+            messages.error(request, f"Only {remaining} tickets remaining for {ticket.type}.")
+            return redirect('book-event', event_id=event.id)
+
         total_price = ticket.price * quantity
 
+        # Create booking
         booking = Booking.objects.create(
             user=request.user,
             ticket=ticket,
@@ -399,6 +451,7 @@ def book_event_view(request, event_id):
             payment_status='paid'
         )
 
+        # Create payment
         transaction_id = str(uuid.uuid4())
         Payment.objects.create(
             booking=booking,
@@ -408,53 +461,53 @@ def book_event_view(request, event_id):
             status='successful'
         )
 
-        # Generate receipt and save locally
+        # Generate PDF receipt
         receipts_dir = os.path.join(settings.MEDIA_ROOT, 'receipts')
         os.makedirs(receipts_dir, exist_ok=True)
-
         receipt_filename = f"receipt_{booking.id}.pdf"
         receipt_path = os.path.join(receipts_dir, receipt_filename)
 
-        # Generate PDF using ReportLab
         c = canvas.Canvas(receipt_path)
         c.drawString(100, 800, f"Receipt for Booking #{booking.id}")
         c.drawString(100, 780, f"Event: {event.title}")
         c.drawString(100, 760, f"User: {request.user.username}")
-        c.drawString(100, 740, f"Quantity: {quantity}")
-        c.drawString(100, 720, f"Total Paid: KES {total_price}")
-        c.drawString(100, 700, f"Transaction ID: {transaction_id}")
+        c.drawString(100, 740, f"Ticket Type: {ticket.type}")
+        c.drawString(100, 720, f"Quantity: {quantity}")
+        c.drawString(100, 700, f"Total Paid: KES {total_price}")
+        c.drawString(100, 680, f"Transaction ID: {transaction_id}")
         c.save()
 
-        # Save receipt path in booking
         with open(receipt_path, 'rb') as f:
             booking.receipt_file.save(receipt_filename, File(f), save=True)
-        booking.save()
 
         messages.success(request, "Booking and payment successful.")
         return redirect('receipt', booking_id=booking.id)
 
-    # GET request
     return render(request, 'events/book-event.html', {
         'event': event,
-        'ticket': ticket
+        'tickets': tickets,
     })
 
+@login_required
 def ticket_detail_view(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
+    event = ticket.event
 
-    #Get booking by the current user
+    # All ticket types for this event (for the radio selection)
+    all_tickets = Ticket.objects.filter(event=event)
+
+    # Booking by the current user for this ticket
     booking = Booking.objects.filter(ticket=ticket, user=request.user).first()
-    # Get payment related to this booking (if any)
+
+    # Related payment (if booking exists)
     payment = Payment.objects.filter(booking=booking).first() if booking else None
 
     return render(request, 'events/ticket-detail.html', {
         'ticket': ticket,
+        'all_tickets': all_tickets,
         'booking': booking,
         'payment': payment,
     })
-
-
-
 @login_required
 def receipt_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
@@ -479,3 +532,44 @@ def download_receipt_view(request, booking_id):
         raise Http404("File does not exist")
 
     return FileResponse(open(receipt_path, 'rb'), as_attachment=True, filename=os.path.basename(receipt_path))
+
+
+
+
+
+
+
+
+
+@login_required
+def organizer_dashboard_view(request):
+    # Get events by current organizer
+    events = Event.objects.filter(organizer=request.user)
+
+    # Prepare a list with enriched data
+    dashboard_data = []
+
+    for event in events:
+        tickets = Ticket.objects.filter(event=event)
+        event_data = {
+            'event': event,
+            'tickets_info': [],
+            'total_revenue': 0,
+        }
+
+        for ticket in tickets:
+            total_sold = Booking.objects.filter(ticket=ticket).aggregate(total=Coalesce(Sum('quantity'), V(0)))['total']
+            revenue = total_sold * ticket.price
+            event_data['tickets_info'].append({
+                'type': ticket.type,
+                'price': ticket.price,
+                'total_sold': total_sold,
+                'revenue': revenue,
+            })
+            event_data['total_revenue'] += revenue
+
+        dashboard_data.append(event_data)
+
+    return render(request, 'events/organizer_dashboard.html', {
+        'dashboard_data': dashboard_data
+    })

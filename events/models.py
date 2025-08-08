@@ -65,20 +65,24 @@ class Ticket(models.Model):
     TICKET_TYPES = [
         ('regular', 'Regular'),
         ('vip', 'VIP'),
-        ('early_bird', 'Early Bird'),
         ('student', 'Student'),
     ]
 
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
     name = models.CharField(max_length=100)
-    type = models.CharField(max_length=20, choices=TICKET_TYPES, default='regular')  # New field
+    type = models.CharField(max_length=20, choices=TICKET_TYPES, default='regular') 
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     created_at = models.DateTimeField(default=timezone.now)
 
+
+    @property
+    def remaining_quantity(self):
+        booked = self.booking_set.aggregate(total=models.Sum('quantity'))['total'] or 0
+        return self.quantity - booked
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
-
+   
 # Booking model
 class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')

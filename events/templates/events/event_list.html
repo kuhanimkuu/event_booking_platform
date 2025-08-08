@@ -1,19 +1,64 @@
 {% extends 'base.html' %}
 {% block title %}All Events{% endblock %}
-{% block content %}
 
+{% block content %}
 <section class="py-12">
   <div class="max-w-6xl mx-auto px-4">
+    
+    <!-- Search Form -->
     <form method="get" class="mb-8 flex gap-2">
-      <input type="text" name="q" value="{{ search }}" placeholder="Search events..." class="flex-1 border rounded px-3 py-2 shadow-sm" />
-      <button type="submit" class="bg-pink-600 text-white px-4 py-2 rounded">Search</button>
+      <input 
+        type="text" 
+        name="q" 
+        value="{{ search }}" 
+        placeholder="Search events..." 
+        class="flex-1 border rounded px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+      />
+      <button type="submit" class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition">
+        Search
+      </button>
     </form>
+  <div class="flex gap-2 mb-4">
+  <!-- All -->
+  <a href="{% if search %}?q={{ search }}{% else %}{% url 'event-list' %}{% endif %}"
+   class="{% if not filter_type %}bg-black text-white{% else %}bg-gray-200{% endif %} px-4 py-2 rounded">
+  All
+</a>
 
+  <!-- Upcoming -->
+  <a href="?status=upcoming{% if search %}&q={{ search }}{% endif %}"
+     class="{% if filter_type == 'upcoming' %}bg-blue-600 text-white{% else %}bg-gray-200{% endif %} px-4 py-2 rounded">
+    Upcoming
+  </a>
+
+  <!-- Ongoing -->
+  <a href="?status=ongoing{% if search %}&q={{ search }}{% endif %}"
+     class="{% if filter_type == 'ongoing' %}bg-green-600 text-white{% else %}bg-gray-200{% endif %} px-4 py-2 rounded">
+    Ongoing
+  </a>
+
+  <!-- Ended -->
+  <a href="?status=ended{% if search %}&q={{ search }}{% endif %}"
+     class="{% if filter_type == 'ended' %}bg-red-600 text-white{% else %}bg-gray-200{% endif %} px-4 py-2 rounded">
+    Ended
+  </a>
+</div>
+
+    <!-- Events Grid -->
     {% if event_data %}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in event_data %}
           {% with event=item.event %}
-          <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+            
+            <!-- Event Image -->
+            <img 
+              src="{{ event.image.url }}" 
+              alt="{{ event.title }}" 
+              class="w-full h-64 object-cover rounded-xl mb-4 shadow"
+            />
+
+            <!-- Event Title -->
             <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ event.title }}</h2>
 
             {% if item.status == "Ended" %}
@@ -26,11 +71,15 @@
                 <li><strong>Remaining:</strong> {{ item.remaining }}</li>
               </ul>
             {% else %}
-              <p class="text-sm text-gray-600 mb-2">
-                <strong>Date:</strong> {{ event.date|date:"F j, Y @ g:i A" }}<br>
+              <p class="text-sm text-gray-600 mb-4">
+                <strong>Start:</strong> {{ event.start_time|date:"F j, Y @ g:i A" }}</br>
+                <strong>End:</strong> {{ event.end_time|date:"F j, Y @ g:i A" }}</br>
                 <strong>Venue:</strong> {{ event.venue.name }}
               </p>
-              <a href="{% url 'event-detail' event.pk %}" class="mt-2 inline-block bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition">
+              <a 
+                href="{% url 'event-detail' event.pk %}" 
+                class="inline-block bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition"
+              >
                 View Details
               </a>
             {% endif %}
@@ -38,12 +87,13 @@
           {% endwith %}
         {% endfor %}
       </div>
+    
     {% else %}
+      <!-- No Events Found Message -->
       <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">
         <p>No events found for "{{ search }}".</p>
       </div>
     {% endif %}
   </div>
 </section>
-
 {% endblock %}

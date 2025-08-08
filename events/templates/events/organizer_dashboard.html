@@ -9,22 +9,43 @@
         </a>
     </div>
 
-    {% if events %}
+    {% if dashboard_data %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for event in events %}
+        {% for entry in dashboard_data %}
         <div class="bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition duration-200">
             <div class="p-5">
-                <h3 class="text-xl font-semibold text-gray-800">{{ event.title }}</h3>
+                <h3 class="text-xl font-semibold text-gray-800">{{ entry.event.title }}</h3>
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ event.start_time|date:"M d, Y H:i" }} – {{ event.end_time|date:"M d, Y H:i" }}
+                    {{ entry.event.start_time|date:"M d, Y H:i" }} – {{ entry.event.end_time|date:"M d, Y H:i" }}
                 </p>
 
+                <div class="mt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-2">🎟️ Ticket Sales</h4>
+                    {% if entry.tickets_info %}
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            {% for ticket in entry.tickets_info %}
+                            <li>
+                                <span class="font-medium">{{ ticket.type }}</span>:
+                                {{ ticket.total_sold }} sold × KES {{ ticket.price }} = 
+                                <span class="font-semibold">KES {{ ticket.revenue }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-gray-400 text-sm">No tickets added yet.</p>
+                    {% endif %}
+                </div>
+
+                <div class="mt-3 text-sm text-gray-800 font-semibold">
+                    💰 Total Revenue: <span class="text-green-600">KES {{ entry.total_revenue }}</span>
+                </div>
+
                 <div class="mt-4 flex items-center justify-between">
-                    <a href="{% url 'edit-event' event.pk %}"
+                    <a href="{% url 'edit-event' entry.event.pk %}"
                        class="inline-block text-sm text-indigo-600 hover:underline font-medium">
                         ✏️ Edit
                     </a>
-                    <a href="{% url 'delete-event' event.pk %}"
+                    <a href="{% url 'delete-event' entry.event.pk %}"
                        class="inline-block text-sm text-red-600 hover:underline font-medium">
                         🗑️ Delete
                     </a>
