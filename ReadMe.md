@@ -2,7 +2,8 @@ A Django-based web application that allows users to browse, book, and manage eve
 
 ## Live Demo
 
-**[Live Project Link]**  
+**Live Project Link** 
+https://eventbookingplatform-production.up.railway.app/ 
 
 *Apologies for the inconvenience — the previous hosting link on Render is no longer active. The live version will be hosted on a new platform shortly.*
 
